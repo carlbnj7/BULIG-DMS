@@ -193,11 +193,22 @@ function make_password(): string {
 
 
 // ---------- accounts ----------
-/** Give a new account its ID (e.g. TCH202600012). The ID is also its first username. */
+/** Give an account its short ID (TCH0001, SCH0001, DIS0001, MUN0001, DIV0001). The ID is also its first username. */
 function assign_user_code(int $id, string $role): string {
-    $c = ROLES[$role][1] . date('Y') . str_pad((string)$id, 5, '0', STR_PAD_LEFT);
-    q('UPDATE users SET user_code = ?, username = ? WHERE id = ?', [$c, $c, $id]);
-    return $c;
+    $pre = ROLES[$role][1];
+    for ($i = 0; $i < 5; $i++) {
+        $max = (int)val('SELECT MAX(CAST(SUBSTRING(user_code, 4) AS UNSIGNED)) FROM users WHERE user_code REGEXP ?', ['^' . $pre . '[0-9]{4}$']);
+        $c = $pre . str_pad((string)($max + 1), 4, '0', STR_PAD_LEFT);
+        try { q('UPDATE users SET user_code = ?, username = IF(setup_done = 1, username, ?) WHERE id = ?', [$c, $c, $id]); return $c; }
+        catch (PDOException $ex) { if ($ex->getCode() !== '23000') throw $ex; }
+    }
+    throw new RuntimeException('Could not make an account ID.');
+}
+/** One time: change old long IDs (TCH2026…) to the short format. */
+function renumber_codes_once(): void {
+    if (setting('id_format') === '2') return;
+    foreach (all("SELECT id, role FROM users WHERE user_code IS NULL OR user_code REGEXP '^(DIV|MUN|DIS|SCH|TCH)20[0-9]{6,}$' ORDER BY id") as $r) assign_user_code((int)$r['id'], $r['role']);
+    q("INSERT INTO settings (k, v) VALUES ('id_format', '2') ON DUPLICATE KEY UPDATE v = '2'");
 }
 function add_user(array $by, string $role, ?int $scope, array $d): array {
     $pw = make_password();

@@ -8,6 +8,7 @@ header('Referrer-Policy: same-origin');
 header("Content-Security-Policy: default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; font-src 'self'; frame-ancestors 'self'; form-action 'self'; base-uri 'self'");
 
 start_session();
+renumber_codes_once();
 $page = preg_replace('/[^a-z_]/', '', (string)($_GET['p'] ?? ''));
 if ($page === '') $page = me() ? 'home' : 'login';
 $file = ROOT . '/app/pages/' . $page . '.php';

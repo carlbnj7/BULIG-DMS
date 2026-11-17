@@ -26,7 +26,7 @@ Copy `config/config.sample.php` to `config/config.php` and type the database nam
 2. **Municipalities** — add each municipality and its districts.
 3. **Schools** — School ID (same as on the SF1), name, district, school head and position (printed on reports).
 4. **Accounts** — make accounts for municipal coordinators, district supervisors, school heads / reading coordinators and teachers.
-   Each gets an ID (MUN…, DIS…, SCH…, TCH…) and a starter password shown once.
+   Each gets a short ID (e.g. MUN0001, DIS0001, SCH0001, TCH0001) and a starter password shown once.
    Municipal, district and school accounts can also make accounts for those under them.
 
 ## 6. Teachers
