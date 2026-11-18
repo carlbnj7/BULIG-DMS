@@ -3,6 +3,13 @@
 $u = need();
 $scope = in_array($_GET['scope'] ?? '', ['class', 'school', 'district', 'municipality', 'division'], true) ? $_GET['scope'] : '';
 $id = (int)($_GET['id'] ?? 0); $period = max(0, min(AP_COUNT, (int)($_GET['period'] ?? 0)));
+// Optional range, e.g. AP 1 to AP 5: the main tables show the last AP, plus a progress table for each AP in the range.
+$rf = ($_GET['from'] ?? '') === '' ? -1 : max(0, min(AP_COUNT, (int)$_GET['from'])); $rt = max(0, min(AP_COUNT, (int)($_GET['to'] ?? 0)));
+$cyc = null; $ci = (string)($_GET['cycle'] ?? '');
+if ($ci !== '' && isset(cycles()[(int)$ci])) { $cyc = cycles()[(int)$ci]; $rf = (int)$cyc['from'] - 1; $rt = (int)$cyc['to']; }
+$range = $rf >= 0 && $rt > $rf ? [$rf, $rt] : null;
+if ($range) $period = $rt;
+$rng = []; $move = ['up' => 0, 'same' => 0, 'none' => 0];
 $sy = in_array($_GET['sy'] ?? '', school_years(), true) ? $_GET['sy'] : setting('school_year', '2026-2027');
 $grade = max(0, min(12, (int)($_GET['grade'] ?? 0)));
 $schools = visible_schools($u);
@@ -41,6 +48,11 @@ $lv = []; $prof = []; $brk = []; $imp = ['bm' => [0, 0], 'me' => [0, 0], 'be' =>
 $brkKey = ['class' => null, 'school' => 'class', 'district' => 'school', 'municipality' => 'district', 'division' => 'municipality'][$scope];
 foreach ($classes as $c) {
     $levels = levels_at((int)$c['id'], $period);
+    if ($range) {
+        for ($ap = $range[0]; $ap <= $range[1]; $ap++) foreach (levels_at((int)$c['id'], $ap) as $L) if ($L) $rng[$ap][$L] = ($rng[$ap][$L] ?? 0) + 1;
+        $start = levels_at((int)$c['id'], $range[0]);
+        foreach ($levels as $lid => $L) { $S0 = $start[$lid] ?? null; if (!$L || !$S0) $move['none']++; elseif ($L !== $S0) $move['up']++; else $move['same']++; }
+    }
     foreach (all('SELECT e.*, l.sex FROM enrolments e JOIN learners l ON l.id = e.learner_id WHERE e.class_id = ? AND e.active = 1', [$c['id']]) as $e) {
         $sx = $e['sex']; $tot[$sx]++; $L = $levels[$e['learner_id']] ?? null;
         if ($L) $lv[$L][$sx] = ($lv[$L][$sx] ?? 0) + 1;
@@ -55,6 +67,6 @@ foreach ($classes as $c) {
 }
 uasort($brk, fn($a, $b) => strcmp($a['name'], $b['name']));
 $title = ['class' => 'CLASSROOM', 'school' => 'SCHOOL', 'district' => 'DISTRICT', 'municipality' => 'MUNICIPAL', 'division' => 'DIVISION'][$scope] . ' READING MONITORING REPORT';
-render('report', ['title' => 'Reports', 'scope' => $scope, 'id' => $id, 'period' => $period, 'sy' => $sy, 'grade' => $grade, 'head' => $head, 'lv' => $lv, 'prof' => $prof, 'brk' => $brk, 'brkKey' => $brkKey, 'imp' => $imp, 'tot' => $tot,
+render('report', ['title' => 'Reports', 'cyc' => $cyc, 'ci' => $ci, 'range' => $range, 'rng' => $rng, 'move' => $move, 'scope' => $scope, 'id' => $id, 'period' => $period, 'sy' => $sy, 'grade' => $grade, 'head' => $head, 'lv' => $lv, 'prof' => $prof, 'brk' => $brk, 'brkKey' => $brkKey, 'imp' => $imp, 'tot' => $tot,
   'rtitle' => $title, 'nClasses' => count($classes), 'schools' => $schools, 'myClasses' => all('SELECT c.id, c.grade, c.section, c.school_year, s.name school FROM classes c JOIN schools s ON s.id = c.school_id WHERE ' . ($u['role'] === 'teacher' ? 'c.teacher_id = ' . (int)$u['id'] : school_scope_sql($u)) . ' ORDER BY c.school_year DESC, s.name, c.grade, c.section LIMIT 400'),
   'muns' => $u['role'] === 'division' ? municipalities() : [], 'dists' => in_array($u['role'], ['division', 'municipal'], true) ? array_filter(districts(), fn($d) => $u['role'] === 'division' || (int)$d['municipality_id'] === (int)$u['scope_id']) : []]);

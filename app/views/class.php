@@ -4,11 +4,11 @@
   <div class="row-btns"><a class="btn" href="<?= url('report', ['scope' => 'class', 'id' => $c['id'], 'period' => 0]) ?>"><?= icon('print', 16) ?> Pre-assessment report</a><a class="btn primary" href="<?= url('report', ['scope' => 'class', 'id' => $c['id'], 'period' => $ap]) ?>"><?= icon('print', 16) ?> AP <?= $ap ?> report</a></div>
 </div>
 <nav class="ap-tabs" aria-label="Assessment period">
-  <?php for ($i = 1; $i <= AP_COUNT; $i++): ?><a href="<?= url('class', ['id' => $c['id'], 'ap' => $i]) ?>" class="<?= $i === $ap ? 'on' : '' ?> <?= isset($done[$i]) ? 'has' : '' ?>">AP <?= $i ?></a><?php endfor; ?>
+  <?php $prevC = null; for ($i = 1; $i <= AP_COUNT; $i++): $cy = cycle_of($i); if ($cy && $cy !== $prevC): ?><span class="cyc-tag"><?= e($cy['name']) ?></span><?php endif; $prevC = $cy; ?><a href="<?= url('class', ['id' => $c['id'], 'ap' => $i]) ?>" class="<?= $i === $ap ? 'on' : '' ?> <?= isset($done[$i]) ? 'has' : '' ?>">AP <?= $i ?></a><?php endfor; ?>
 </nav>
 <div class="card monitor" data-monitor data-class="<?= (int)$c['id'] ?>" data-ap="<?= $ap ?>" data-profiles='<?= e(json_encode(PROFILES)) ?>'>
   <div class="mon-bar">
-    <b>Assessment period <?= $ap ?></b>
+    <b>Assessment period <?= $ap ?><?php if ($cy = cycle_of($ap)): ?> · <?= e($cy['name']) ?> (AP <?= (int)$cy['from'] ?>–<?= (int)$cy['to'] ?>)<?php endif; ?></b>
     <label class="inline-lbl">Term <select data-term<?= $dis ?>><option value="">—</option><?php foreach (TERMS as $t): ?><option <?= $term === $t ? 'selected' : '' ?>><?= e($t) ?></option><?php endforeach; ?></select></label>
     <span class="legend"><i class="lg-pass"></i> Passed moves the learner up one level <i class="lg-nr"></i> Not ready stays</span>
     <span class="save-state" data-save-state></span>

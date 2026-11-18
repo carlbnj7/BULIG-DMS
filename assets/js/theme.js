@@ -35,3 +35,9 @@ document.addEventListener('input', function (e) {
   document.querySelectorAll('[data-navitem]').forEach(function (a) { a.hidden = q !== '' && a.textContent.toLowerCase().indexOf(q) < 0; });
   document.querySelectorAll('.nav-h').forEach(function (h) { h.hidden = q !== ''; });
 });
+// Phones: slide-out menu (same as Game ALS and BULIG Quest).
+document.addEventListener('click', function (e) {
+  if (e.target.closest('[data-menu]')) document.body.classList.add('menu-open');
+  else if (e.target.closest('[data-menu-close]')) document.body.classList.remove('menu-open');
+});
+document.addEventListener('keydown', function (e) { if (e.key === 'Escape') document.body.classList.remove('menu-open'); });

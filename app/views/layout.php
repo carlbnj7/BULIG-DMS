@@ -28,8 +28,8 @@ $cur = $_GET['p'] ?? 'home';
 <link rel="icon" href="assets/img/icons/favicon-64.png" type="image/png">
 <link rel="apple-touch-icon" href="assets/img/icons/apple-touch-icon.png">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="stylesheet" href="assets/css/app.css?v=3">
-<script src="assets/js/theme.js?v=2"></script>
+<link rel="stylesheet" href="assets/css/app.css?v=16">
+<script src="assets/js/theme.js?v=3"></script>
 </head>
 <body class="<?= e($bodyClass ?? '') ?>" data-csrf="<?= e($_SESSION['csrf'] ?? '') ?>">
 <?php if ($bare): require $view_file; else: ?>
@@ -49,6 +49,7 @@ $cur = $_GET['p'] ?? 'home';
   </aside>
   <div class="main">
     <header class="top noprint">
+      <button type="button" class="menu-btn" data-menu aria-label="Open menu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10"/></svg></button>
       <a class="brand sm" href="<?= url('home') ?>"><img src="assets/img/bulig-logo.png" alt="BULIG" width="92" height="45"></a>
       <div class="top-title"><?= e($title ?? '') ?></div>
       <div class="who"><span class="av"><?= e(mb_strtoupper(mb_substr($u['first_name'] ?: '?', 0, 1))) ?></span><span class="who-t"><b><?= e(full_name($u)) ?></b><small><?= e(role_name($u['role'])) ?> · <?= e(scope_label($u)) ?></small></span></div>
@@ -58,9 +59,7 @@ $cur = $_GET['p'] ?? 'home';
       <?php require $view_file; ?>
     </main>
   </div>
-  <nav class="tabbar noprint">
-    <?php foreach (array_slice($nav, 0, 5) as [$p, $label, $ic]): ?><a href="<?= url($p) ?>" class="<?= $cur === $p ? 'on' : '' ?>"><?= icon($ic, 22) ?><span><?= e($label) ?></span></a><?php endforeach; ?>
-  </nav>
+  <div class="menu-shade" data-menu-close></div>
 </div>
 <?php endif; ?>
 <?php foreach ($scripts ?? [] as $js): ?><script src="assets/js/<?= e($js) ?>?v=1"></script><?php endforeach; ?>

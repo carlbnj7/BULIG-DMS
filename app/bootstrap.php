@@ -293,5 +293,11 @@ function levels_at(int $class, int $ap): array {
       FROM enrolments e WHERE e.class_id = ? AND e.active = 1', [$ap, $class]) as $r) $out[$r['learner_id']] = level_after($r['pre_level'], (int)$r['passed']);
     return $out;
 }
+/** Cycles set by the Division admin: [['name' => 'Cycle 1', 'from' => 1, 'to' => 5], ...] in AP order. */
+function cycles(): array {
+    $c = json_decode(setting('cycles', '[]'), true);
+    return is_array($c) ? array_values(array_filter($c, fn($x) => isset($x['name'], $x['from'], $x['to']))) : [];
+}
+function cycle_of(int $ap): ?array { foreach (cycles() as $c) if ($ap >= $c['from'] && $ap <= $c['to']) return $c; return null; }
 function school_years(): array { $y = (int)date('Y'); $o = []; for ($i = $y - 2; $i <= $y + 2; $i++) $o[] = $i . '-' . ($i + 1); return $o; }
 function proper(string $s): string { return mb_convert_case(mb_strtolower(trim(preg_replace('/\s+/', ' ', $s))), MB_CASE_TITLE, 'UTF-8'); }

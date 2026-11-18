@@ -1,4 +1,4 @@
-<?php $u = me(); $pn = $period ? 'AP ' . $period : 'PRE-ASSESSMENT'; $n = fn($a, $k) => (int)($a[$k] ?? 0); ?>
+<?php $u = me(); $pl = fn($p) => $p ? 'AP ' . $p : 'Pre-test'; $pn = $cyc ? strtoupper($cyc['name'] . ' (AP ' . $cyc['from'] . ' to AP ' . $cyc['to'] . ')') : ($range ? strtoupper($pl($range[0]) . ' to ' . $pl($range[1])) : strtoupper($pl($period))); $n = fn($a, $k) => (int)($a[$k] ?? 0); ?>
 <form class="card filters rep-pick noprint" method="get"><input type="hidden" name="p" value="report">
   <select name="scope" data-scope>
     <option value="class" <?= $scope === 'class' ? 'selected' : '' ?>>Class</option>
@@ -14,7 +14,9 @@
     <?php if ($scope === 'municipality') { if ($u['role'] === 'municipal') echo '<option value="' . (int)$u['scope_id'] . '">' . e(scope_label($u)) . '</option>'; else foreach ($muns as $m) echo '<option value="' . (int)$m['id'] . '"' . ($id == $m['id'] ? ' selected' : '') . '>' . e($m['name']) . '</option>'; } ?>
     <?php if ($scope === 'division') echo '<option value="0">' . e(setting('division_name')) . '</option>'; ?>
   </select>
-  <select name="period"><option value="0">Pre-assessment</option><?php for ($i = 1; $i <= AP_COUNT; $i++): ?><option value="<?= $i ?>" <?= $period === $i ? 'selected' : '' ?>>AP <?= $i ?></option><?php endfor; ?></select>
+  <select name="period"><option value="0">Pre-test</option><?php for ($i = 1; $i <= AP_COUNT; $i++): ?><option value="<?= $i ?>" <?= $period === $i ? 'selected' : '' ?>>AP <?= $i ?></option><?php endfor; ?></select>
+  <?php if (cycles()): ?><select name="cycle" aria-label="Cycle"><option value="">Cycle…</option><?php foreach (cycles() as $i => $c): ?><option value="<?= $i ?>" <?= $ci === (string)$i ? 'selected' : '' ?>><?= e($c['name'] . ' (AP ' . $c['from'] . '–' . $c['to'] . ')') ?></option><?php endforeach; ?></select><?php endif; ?>
+  <span class="rng-pick"><span>or compare</span><select name="from" aria-label="From"><option value="">From</option><option value="0" <?= $range && $range[0] === 0 ? 'selected' : '' ?>>Pre-test</option><?php for ($i = 1; $i < AP_COUNT; $i++): ?><option value="<?= $i ?>" <?= $range && $range[0] === $i ? 'selected' : '' ?>>AP <?= $i ?></option><?php endfor; ?></select><span>to</span><select name="to" aria-label="To"><option value="0">To</option><?php for ($i = 1; $i <= AP_COUNT; $i++): ?><option value="<?= $i ?>" <?= $range && $range[1] === $i ? 'selected' : '' ?>>AP <?= $i ?></option><?php endfor; ?></select></span>
   <?php if ($scope !== 'class'): ?><select name="sy"><?php foreach (school_years() as $y): ?><option <?= $sy === $y ? 'selected' : '' ?>><?= e($y) ?></option><?php endforeach; ?></select>
   <select name="grade"><option value="0">All grades</option><?php for ($g = 1; $g <= 12; $g++): ?><option value="<?= $g ?>" <?= $grade === $g ? 'selected' : '' ?>>Grade <?= $g ?></option><?php endfor; ?></select><?php endif; ?>
   <button class="btn">Show</button><button type="button" class="btn primary" data-print><?= icon('print', 16) ?> Print</button>
@@ -39,6 +41,14 @@
     <tbody><?php foreach (['M' => 'Male', 'F' => 'Female'] as $sx => $sl): $t = 0; ?><tr><th><?= $sl ?></th><?php foreach (LEVELS as $k => $_): $v = (int)($lv[$k][$sx] ?? 0); $t += $v; ?><td><?= $v ?></td><?php endforeach; ?><td><b><?= $t ?></b></td></tr><?php endforeach; ?>
     <tr class="tot"><th>Total</th><?php $g = 0; foreach (LEVELS as $k => $_): $v = (int)($lv[$k]['M'] ?? 0) + (int)($lv[$k]['F'] ?? 0); $g += $v; ?><td><?= $v ?></td><?php endforeach; ?><td><b><?= $g ?></b></td></tr></tbody>
   </table>
+  <?php if ($range): ?>
+  <table class="rep-t lv rng">
+    <thead><tr><th colspan="<?= count(LEVELS) + 2 ?>">PROGRESS FROM <?= e(strtoupper($pl($range[0]))) ?> TO <?= e(strtoupper($pl($range[1]))) ?> (number of learners at each level)</th></tr>
+    <tr><th>Period</th><?php foreach (LEVELS as $k => [$l]): ?><th><?= e($l) ?></th><?php endforeach; ?><th>Total</th></tr></thead>
+    <tbody><?php for ($ap = $range[0]; $ap <= $range[1]; $ap++): $t = 0; ?><tr><th><?= e($pl($ap)) ?></th><?php foreach (LEVELS as $k => $_): $v = (int)($rng[$ap][$k] ?? 0); $t += $v; ?><td><?= $v ?></td><?php endforeach; ?><td><b><?= $t ?></b></td></tr><?php endfor; ?></tbody>
+  </table>
+  <p class="rep-note">From <?= e($pl($range[0])) ?> to <?= e($pl($range[1])) ?>: <b><?= (int)$move['up'] ?></b> learner<?= $move['up'] == 1 ? '' : 's' ?> moved up at least one level, <b><?= (int)$move['same'] ?></b> stayed at the same level<?= $move['none'] ? ', ' . (int)$move['none'] . ' have no BULIG level yet' : '' ?>.</p>
+  <?php endif; ?>
   <?php $none = ($tot['M'] + $tot['F']) - $g; if ($none > 0): ?><p class="rep-note"><?= $none ?> learner<?= $none === 1 ? '' : 's' ?> with no BULIG level yet (not counted above).</p><?php endif; ?>
   <div class="ks-grid">
   <?php foreach (KEY_STAGES as $ks => $ksn): if ($ks > 1 && empty($prof[$ks])) continue; ?>
